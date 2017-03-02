@@ -1,0 +1,19 @@
+{
+  "name": "vscode-extensions",
+  "version": "1.0.0",
+  "description": "",
+  "main": "vscode-ext.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rahul Rajaram <rajaram.rahul91@gmail.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rajarz/vscode-extensions.git"
+  },
+  "homepage": "https://github.com/rajarz/vscode-extensions.git#readme",
+  "devDependencies": {
+    "shelljs": "^0.7.6"
+  }
+}

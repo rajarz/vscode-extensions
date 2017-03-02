@@ -19,10 +19,12 @@ switch (process.argv[2]) {
     case "install_all_extensions":
         var sExtensions = shell.exec("code --list-extensions --show-versions", {silent: true}).stdout;
         shell.ls("extensions/*.vsix").forEach(function(sFilePath) {
-            // var sNewPathToCompare = sFilePath.split("_")
-            // installExtension(sFilePath);
-            // return;
-            console.log(sFilePath);
+            var sExtension = sFilePath.split("extensions/")[1].split('.vsix')[0];
+            var [,sPublisher,sExtensionName,sVersion,] = sExtension.split(/(.+)_(.+)_(.+)/);
+            var sExtensionToCompare = sPublisher + "." + sExtensionName + "@" + sVersion;
+            if (!sExtensions.includes(sExtensionToCompare)) {
+                installExtension(sFilePath);
+            }
         });
         break;
     case "i":
@@ -71,7 +73,7 @@ function extractExtensions() {
         cmdListExtensions.stdout.split('\n').forEach(function (sExtension) {
             if (!sExtension) return;
             // Note: not sure why the first and last elements are empty!
-            var [, sPublisher, sExtension, sVersion, ] = sExtension.split(/(.+)\.(.+)-(.+)/);
+            var [, sPublisher, sExtension, sVersion, ] = sExtension.split(/(.+)\.(.+)@(.+)/);
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
             var sFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
             download(sURL, "extensions/" + sFileName);
@@ -91,4 +93,4 @@ function download(url, dest, cb) {
         fs.unlink(dest); // Delete the file async. (But we don't check the result)
         if (cb) cb(err.message);
     });
-};
+}
