@@ -12,27 +12,24 @@ var sPublisher = "abusaidm";
 var sExtensionName = "html-snippets";
 var sVersion = "0.1.0";
 
-// Modify this if you decide to only
-// install a subset of extensions.
+// Modify this to install a subset of extensions.
+// The "a" script will look within
 var sExtensionsDir = "extensions/";
 
 switch (process.argv[2]) {
     case "e":
-    case "extract":
         extractExtensions();
         break;
     case "a":
-    case "install_all_extensions":
         installAllExtensions();
         break;
     case "i":
-    case "install_from_zip":
-        // This was my first attempt at automating the installation
-        // of an extension from the PROD to the gateway domain.
+        // This was my initial attempt at easing the installation of an
+        // extension zip from the production to the gateway domain.
         installExtensionFromZip();
         break;
     case "is":
-    case "install_specific_extension":
+        // TODO: Should take remainder of process arguments?
         installExtension(process.argv[3]);
         break;
     default:
@@ -51,7 +48,7 @@ function getFormattedVsixFileName(sPublisher, sExtensionName, sVersion) {
 
 function installExtension(sVsixFileName) {
     if (shell.test('-e', sVsixFileName)) {
-        if (shell.exec("code --install-extension " + sVsixFileName).code !== 0) {
+        if (shell.exec("code --install-extension " + sVsixFileName, { silent: true }).code !== 0) {
             shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
         }
     }
@@ -62,9 +59,9 @@ function installAllExtensions() {
 
     shell.ls(sExtensionsDir + "*.vsix").forEach(function (sFilePath) {
         var sExtension = sFilePath.split(sExtensionsDir)[1].split('.vsix')[0];
-        var sExtensionToCompare = sPublisher + "." + sExtensionName + "@" + sVersion;
 
-        if (!sExtensions.includes(sExtensionToCompare)) {
+        if (!sExtensions.includes(sExtension)) {
+            // only attempt to install those extensions that are not yet installed.
             installExtension(sFilePath);
         }
     });
@@ -88,7 +85,7 @@ function extractExtensions() {
     if (!cmdListExtensions.code) {
         cmdListExtensions.stdout.split('\n').forEach(function (sExtension) {
             if (!sExtension) return;
-            // Note: not sure why the first and last elements are empty!
+            // TODO: not sure why the first and last elements are empty while splitting?
             var [, sPublisher, sExtension, sVersion,] = sExtension.split(/(.+)\.(.+)@(.+)/);
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
             var sFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
