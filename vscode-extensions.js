@@ -23,7 +23,11 @@ switch (process.argv[2]) {
             var [,sPublisher,sExtensionName,sVersion,] = sExtension.split(/(.+)_(.+)_(.+)/);
             var sExtensionToCompare = sPublisher + "." + sExtensionName + "@" + sVersion;
             if (!sExtensions.includes(sExtensionToCompare)) {
-                installExtension(sFilePath);
+                try {
+                    installExtension(sFilePath);
+                } catch (e) {
+                    process.exit();
+                }
             }
         });
         break;
