@@ -1,6 +1,6 @@
 /**
- * 28.01.17 - Found a not so pretty way to install extensions in Visual Studio code.
- * 03.02.17 - Created synchronization of extensions between machines.
+ * 28.01 .17 - Found a not so pretty way to install extensions in Visual Studio code.
+ * 03.02 .17 - Created synchronization of extensions between machines.
  */
 var shell = require("shelljs");
 var https = require('https');
@@ -18,6 +18,7 @@ var sExtensionsDir = "extensions/";
 
 switch (process.argv[2]) {
     case "e":
+        // TODO: shouldn't extract extensions already within sExtensionsDir
         extractExtensions();
         break;
     case "a":
@@ -49,7 +50,9 @@ function getFormattedVsixFileName(sPublisher, sExtensionName, sVersion) {
 
 function installExtension(sVsixFileName) {
     if (shell.test('-e', sVsixFileName)) {
-        if (shell.exec("code --install-extension " + sVsixFileName, { silent: true }).code !== 0) {
+        if (shell.exec("code --install-extension " + sVsixFileName, {
+                silent: true
+            }).code !== 0) {
             shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
             process.exit(1);
         }
@@ -57,7 +60,9 @@ function installExtension(sVsixFileName) {
 }
 
 function installAllExtensions() {
-    var sExtensions = shell.exec("code --list-extensions --show-versions", { silent: true }).stdout;
+    var sExtensions = shell.exec("code --list-extensions --show-versions", {
+        silent: true
+    }).stdout;
 
     shell.ls(sExtensionsDir + "*.vsix").forEach(function (sFilePath) {
         var sExtension = sFilePath.split(sExtensionsDir)[1].split('.vsix')[0];
@@ -84,14 +89,22 @@ function extractExtensions() {
     var cmdListExtensions = shell.exec("code --list-extensions --show-versions", {
         silent: true
     });
+    if (!shell.test('-e', sExtensionsDir)) {
+        shell.mkdir('-p', sExtensionsDir);
+    }
+    // from this you can always re-install if required.
+    shell.echo(cmdListExtensions.stdout).to(sExtensionsDir + "my_extensions.txt");
+
     if (!cmdListExtensions.code) {
         cmdListExtensions.stdout.split('\n').forEach(function (sExtension) {
             if (!sExtension) return;
             // TODO: not sure why the first and last elements are empty while splitting?
-            var [, sPublisher, sExtension, sVersion,] = sExtension.split(/(.+)\.(.+)@(.+)/);
+            var [, sPublisher, sExtension, sVersion, ] = sExtension.split(/(.+)\.(.+)@(.+)/);
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
             var sFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
-            download(sURL, sExtensionsDir + sFileName);
+            download(sURL, sExtensionsDir + sFileName, function (error) {
+                console.log(error);
+            });
         });
     }
 }
