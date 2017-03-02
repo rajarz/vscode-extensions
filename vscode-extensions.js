@@ -26,6 +26,7 @@ switch (process.argv[2]) {
     case "i":
         // This was my initial attempt at easing the installation of an
         // extension zip from the production to the gateway domain.
+        // Not really using anymore.
         installExtensionFromZip();
         break;
     case "is":
@@ -50,6 +51,7 @@ function installExtension(sVsixFileName) {
     if (shell.test('-e', sVsixFileName)) {
         if (shell.exec("code --install-extension " + sVsixFileName, { silent: true }).code !== 0) {
             shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
+            process.exit(1);
         }
     }
 }
@@ -72,7 +74,7 @@ function installExtensionFromZip() {
     if (shell.test("-e", "Microsoft.VisualStudio.Services.zip")) {
         shell.mv("Microsoft.VisualStudio.Services.zip", sVsixFileName);
         if (shell.exec("code --install-extension " + sVsixFileName).code !== 0) {
-            shell.echo("Error: Couldn't load vsix package");
+            shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
             process.exit(1);
         }
     }
