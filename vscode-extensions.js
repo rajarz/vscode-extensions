@@ -1,11 +1,13 @@
 /**
  * 28.01.17 - Found a not so pretty way to install extensions in Visual Studio code.
+ * 03.02.17 - Created synchronization of extensions between machines.
  */
 var shell = require("shelljs");
 var https = require('https');
 var fs = require('fs');
 var path = require('path');
 
+// Globals to ease with modification
 var sPublisher = "abusaidm";
 var sExtensionName = "html-snippets";
 var sVersion = "0.1.0";
@@ -17,34 +19,17 @@ switch (process.argv[2]) {
         break;
     case "a":
     case "install_all_extensions":
-        var sExtensions = shell.exec("code --list-extensions --show-versions", {silent: true}).stdout;
-        shell.ls("extensions/*.vsix").forEach(function(sFilePath) {
-            var sExtension = sFilePath.split("extensions/")[1].split('.vsix')[0];
-            var [,sPublisher,sExtensionName,sVersion,] = sExtension.split(/(.+)_(.+)_(.+)/);
-            var sExtensionToCompare = sPublisher + "." + sExtensionName + "@" + sVersion;
-            if (!sExtensions.includes(sExtensionToCompare)) {
-                try {
-                    installExtension(sFilePath);
-                } catch (e) {
-                    process.exit();
-                }
-            }
-        });
+        installAllExtensions();
         break;
     case "i":
     case "install_from_zip":
-        if (shell.test("-e", "Microsoft.VisualStudio.Services.zip")) {
-            shell.mv("Microsoft.VisualStudio.Services.zip", sVsixFileName);
-            if (shell.exec("code --install-extension " + sVsixFileName).code !== 0) {
-                shell.echo("Error: Couldn't load vsix package");
-                process.exit(1);
-            }
-        }
+        // This was my first attempt at automating the installation
+        // of an extension from the PROD to the gateway domain.
+        installExtensionFromZip();
         break;
     case "is":
     case "install_specific_extension":
-        var sVsixFileName = process.argv[3];
-        installExtension(sVsixFileName);
+        installExtension(process.argv[3]);
         break;
     default:
         sURL = getFormattedURL(sPublisher, sExtensionName, sVersion);
@@ -57,13 +42,37 @@ function getFormattedURL(sPublisher, sExtensionName, sVersion) {
 }
 
 function getFormattedVsixFileName(sPublisher, sExtensionName, sVersion) {
-    return sPublisher + "_" + sExtensionName + "_" + sVersion + ".vsix";
+    return sPublisher + "." + sExtensionName + "@" + sVersion + ".vsix";
 }
 
 function installExtension(sVsixFileName) {
     if (shell.test('-e', sVsixFileName)) {
         if (shell.exec("code --install-extension " + sVsixFileName).code !== 0) {
             shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
+        }
+    }
+}
+
+function installAllExtensions() {
+    var sExtensions = shell.exec("code --list-extensions --show-versions", { silent: true }).stdout;
+
+    shell.ls("extensions/*.vsix").forEach(function (sFilePath) {
+        var sExtension = sFilePath.split("extensions/")[1].split('.vsix')[0];
+        var sExtensionToCompare = sPublisher + "." + sExtensionName + "@" + sVersion;
+
+        if (!sExtensions.includes(sExtensionToCompare)) {
+            installExtension(sFilePath);
+        }
+    });
+}
+
+function installExtensionFromZip() {
+    var sVsixFileName = getFormattedVsixFileName(sPublisher, sExtensionName, sVersion)
+    if (shell.test("-e", "Microsoft.VisualStudio.Services.zip")) {
+        shell.mv("Microsoft.VisualStudio.Services.zip", sVsixFileName);
+        if (shell.exec("code --install-extension " + sVsixFileName).code !== 0) {
+            shell.echo("Error: Couldn't load vsix package");
+            process.exit(1);
         }
     }
 }
@@ -77,7 +86,7 @@ function extractExtensions() {
         cmdListExtensions.stdout.split('\n').forEach(function (sExtension) {
             if (!sExtension) return;
             // Note: not sure why the first and last elements are empty!
-            var [, sPublisher, sExtension, sVersion, ] = sExtension.split(/(.+)\.(.+)@(.+)/);
+            var [, sPublisher, sExtension, sVersion,] = sExtension.split(/(.+)\.(.+)@(.+)/);
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
             var sFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
             download(sURL, "extensions/" + sFileName);
