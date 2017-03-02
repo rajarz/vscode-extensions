@@ -12,6 +12,10 @@ var sPublisher = "abusaidm";
 var sExtensionName = "html-snippets";
 var sVersion = "0.1.0";
 
+// Modify this if you decide to only
+// install a subset of extensions.
+var sExtensionsDir = "extensions/";
+
 switch (process.argv[2]) {
     case "e":
     case "extract":
@@ -56,8 +60,8 @@ function installExtension(sVsixFileName) {
 function installAllExtensions() {
     var sExtensions = shell.exec("code --list-extensions --show-versions", { silent: true }).stdout;
 
-    shell.ls("extensions/*.vsix").forEach(function (sFilePath) {
-        var sExtension = sFilePath.split("extensions/")[1].split('.vsix')[0];
+    shell.ls(sExtensionsDir + "*.vsix").forEach(function (sFilePath) {
+        var sExtension = sFilePath.split(sExtensionsDir)[1].split('.vsix')[0];
         var sExtensionToCompare = sPublisher + "." + sExtensionName + "@" + sVersion;
 
         if (!sExtensions.includes(sExtensionToCompare)) {
@@ -82,14 +86,13 @@ function extractExtensions() {
         silent: true
     });
     if (!cmdListExtensions.code) {
-        shell.echo(cmdListExtensions.stdout).to("extensions/installed_extensions.txt");
         cmdListExtensions.stdout.split('\n').forEach(function (sExtension) {
             if (!sExtension) return;
             // Note: not sure why the first and last elements are empty!
             var [, sPublisher, sExtension, sVersion,] = sExtension.split(/(.+)\.(.+)@(.+)/);
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
             var sFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
-            download(sURL, "extensions/" + sFileName);
+            download(sURL, sExtensionsDir + sFileName);
         });
     }
 }
