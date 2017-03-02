@@ -49,13 +49,16 @@ function getFormattedVsixFileName(sPublisher, sExtensionName, sVersion) {
 }
 
 function installExtension(sVsixFileName) {
-    if (shell.test('-e', sVsixFileName)) {
-        if (shell.exec("code --install-extension " + sVsixFileName, {
+    try {
+        if (shell.test('-e', sVsixFileName)) {
+            shell.exec("code --install-extension " + sVsixFileName, {
                 silent: true
-            }).code !== 0) {
-            shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
-            process.exit(1);
+            });
         }
+        console.log("Installed: " + sVsixFileName);
+    } catch (e) {
+        shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
+        process.exit(1);
     }
 }
 
