@@ -1,5 +1,5 @@
 /**
- * 28.01 .17 - Found a not so pretty way to install extensions in Visual Studio code.
+ * 28.01 .17 - Script to install extensions in Visual Studio code.
  * 03.02 .17 - Created synchronization of extensions between machines.
  */
 var shell = require("shelljs");
@@ -98,15 +98,35 @@ function extractExtensions() {
     // from this you can always re-install if required.
     shell.echo(cmdListExtensions.stdout).to(sExtensionsDir + "my_extensions.txt");
 
+    var sDownloadedExtensions = shell.ls(sExtensionsDir + "*.vsix");
+
     if (!cmdListExtensions.code) {
         cmdListExtensions.stdout.split('\n').forEach(function (sExtension) {
             if (!sExtension) return;
             // TODO: not sure why the first and last elements are empty while splitting?
             var [, sPublisher, sExtension, sVersion, ] = sExtension.split(/(.+)\.(.+)@(.+)/);
+
+            var sExtFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
+
+            if (shell.test('-e', sExtensionsDir + sExtFileName)) {
+                // latest version of extension has already been downloaded!
+                console.log("EXISTING: " + sExtFileName);
+                return;
+            } else {
+                // if an older version of an extension exists, remove and download the latest one.
+                var indexOfOldExtFileName = sDownloadedExtensions.toString().indexOf(sPublisher + "." + sExtension);
+                if (indexOfOldExtFileName > -1) {
+                    // hacky way of getting the old extension name through string manipulation.
+                    var sOldExtFileName = sDownloadedExtensions.toString().substring(indexOfOldExtFileName).split(',')[0];
+                    console.log("REPLACING: " + sOldExtFileName);
+                    shell.rm(sExtensionsDir + sOldExtFileName);
+                }
+            }
+
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
-            var sFileName = getFormattedVsixFileName(sPublisher, sExtension, sVersion);
-            download(sURL, sExtensionsDir + sFileName, function (error) {
-                console.log(error);
+            console.log("DOWNLOADING: " + sExtFileName);
+            download(sURL, sExtensionsDir + sExtFileName, function (error) {
+                console.error(error);
             });
         });
     }
