@@ -55,10 +55,9 @@ function installExtension(sVsixFileName) {
                 silent: true
             });
         }
-        console.log("Installed: " + sVsixFileName);
+        console.log("INSTALLING:\t" + sVsixFileName);
     } catch (e) {
-        shell.echo("Error: Couldn't load vsix package: " + sVsixFileName);
-        process.exit(1);
+        console.error("ERROR INSTALLING:\t" + sVsixFileName);
     }
 }
 
@@ -68,11 +67,13 @@ function installAllExtensions() {
     }).stdout;
 
     shell.ls(sExtensionsDir + "*.vsix").forEach(function (sFilePath) {
-        var sExtension = sFilePath.split(sExtensionsDir)[1].split('.vsix')[0];
+        var sExtFullName = sFilePath.split(sExtensionsDir)[1].split('.vsix')[0];
 
-        if (!sExtensions.includes(sExtension)) {
-            // only attempt to install those extensions that are not yet installed.
+        if (!sExtensions.includes(sExtFullName)) {
+            // only attempt to install those extensions that are not already installed.
             installExtension(sFilePath);
+        } else {
+            console.log("SKIPPING:\t" + sExtFullName);
         }
     });
 }
@@ -96,7 +97,7 @@ function extractExtensions() {
         shell.mkdir('-p', sExtensionsDir);
     }
     // from this you can always re-install if required.
-    shell.echo(cmdListExtensions.stdout).to(sExtensionsDir + "my_extensions.txt");
+    // shell.echo(cmdListExtensions.stdout).to(sExtensionsDir + "my_extensions.txt");
 
     var sDownloadedExtensions = shell.ls(sExtensionsDir + "*.vsix");
 
@@ -110,7 +111,7 @@ function extractExtensions() {
 
             if (shell.test('-e', sExtensionsDir + sExtFileName)) {
                 // latest version of extension has already been downloaded!
-                console.log("EXISTING: " + sExtFileName);
+                console.log("SKIPPING:\t" + sExtFileName);
                 return;
             } else {
                 // if an older version of an extension exists, remove and download the latest one.
@@ -118,13 +119,13 @@ function extractExtensions() {
                 if (indexOfOldExtFileName > -1) {
                     // hacky way of getting the old extension name through string manipulation.
                     var sOldExtFileName = sDownloadedExtensions.toString().substring(indexOfOldExtFileName).split(',')[0];
-                    console.log("REPLACING: " + sOldExtFileName);
+                    console.log("REMOVING:\t" + sOldExtFileName);
                     shell.rm(sExtensionsDir + sOldExtFileName);
                 }
             }
 
             var sURL = getFormattedURL(sPublisher, sExtension, sVersion);
-            console.log("DOWNLOADING: " + sExtFileName);
+            console.log("DOWNLOADING:\t" + sExtFileName);
             download(sURL, sExtensionsDir + sExtFileName, function (error) {
                 console.error(error);
             });
