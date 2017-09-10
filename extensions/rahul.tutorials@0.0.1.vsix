@@ -1,0 +1,1 @@
+{"$id":"1","innerException":null,"message":"The requested extension 'rahul.tutorials' doesn't exist.","typeName":"Microsoft.VisualStudio.Services.Gallery.WebApi.ExtensionDoesNotExistException, Microsoft.VisualStudio.Services.Gallery.WebApi","typeKey":"ExtensionDoesNotExistException","errorCode":0,"eventId":3000}
